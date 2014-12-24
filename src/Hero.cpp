@@ -47,6 +47,7 @@ void HeroRequester::replyReady(const QByteArray &json) {
       QJsonObject hero = value.toObject();
       names.insert(hero["id"].toInt(), hero["localized_name"].toString());
     }
+    names.insert(0, "Unknown");
     emit heroesReady(this, names);
   }
 }
