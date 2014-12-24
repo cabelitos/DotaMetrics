@@ -8,12 +8,14 @@
 #include <QTextStream>
 #include <QCommandLineParser>
 #include <iostream>
+#include <QDateTime>
 #include "Crawler.hpp"
 
 static void _myMessageOutput(QtMsgType type,
 			     const QMessageLogContext &context,
 			     const QString &msg) {
   Q_UNUSED(context);
+  QString date = QDateTime::currentDateTime().toString("h:m:s  d/M/yyyy t");
   QByteArray localMsg = msg.toLocal8Bit();
   QFile output(QDir::currentPath() + QDir::separator() + "log.txt");
   //Prey for the gods, this can't fail!
@@ -21,20 +23,20 @@ static void _myMessageOutput(QtMsgType type,
   QTextStream stream(&output);
   switch (type) {
   case QtDebugMsg:
-    stream << localMsg.constData() << "\n";
+    stream << date << "-" << localMsg.constData() << "\n";
     break;
   case QtWarningMsg:
-    stream << "Warning:" << localMsg.constData() << "\n";
+    stream << "Warning:" << date << "-" << localMsg.constData() << "\n";
     break;
   case QtCriticalMsg:
-    stream << "Critical:" << localMsg.constData() << "\n";
+    stream << "Critical:" << date << "-" << localMsg.constData() << "\n";
     break;
   case QtFatalMsg:
-    stream << "Fatal:" << localMsg.constData() << "\n";
+    stream << "Fatal:" << date << "-" << localMsg.constData() << "\n";
     abort();
     break;
   default:
-    stream << "Default:" << localMsg.constData() << "\n";
+    stream << "Default:" << date << "-" << localMsg.constData() << "\n";
     break;
   }
   stream.flush();
