@@ -1,4 +1,5 @@
 #include "Crawler.hpp"
+#include "DataBase.hpp"
 #include <QtGlobal>
 #include <QDebug>
 #include <QCoreApplication>
@@ -29,7 +30,10 @@ void Crawler::start() {
 
 void Crawler::_matchesReady(MatchRequester *requester, QList<Match *> matches) {
   qDebug() << "Matches ready to be inspected!\n";
+  DataBase db;
+  db.insertValues(matches);
   requester->deleteLater();
+  qDebug() << "All matches inserted to the database";
 }
 
 

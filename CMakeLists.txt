@@ -12,6 +12,8 @@ find_package(Qt5Network REQUIRED)
 find_package(Qt5Sql REQUIRED)
 
 add_executable(dota_metrics
+  src/DataBase.hpp
+  src/DataBase.cpp
   src/MatchDetails.hpp
   src/MatchDetails.cpp
   src/Hero.hpp
