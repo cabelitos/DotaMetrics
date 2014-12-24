@@ -20,5 +20,6 @@ private:
 
 private slots:
   void _matchesReady(MatchRequester *self, QList<Match *> matches);
+  void _matchFetchError(MatchRequester *);
   void _timerTimeout();
 };

@@ -81,6 +81,7 @@ public:
 
 signals:
   void matchesReady(MatchRequester *self, QList<Match *> matches);
+  void matchFetchError(MatchRequester *self);
 };
 
 QDebug operator<<(QDebug dbg, const Match &match);

@@ -19,8 +19,17 @@ void Crawler::_timerTimeout() {
 	  SIGNAL(matchesReady(MatchRequester *, QList<Match*>)),
 	  this,
 	  SLOT(_matchesReady(MatchRequester *, QList<Match*>)));
+  connect(mRequester,
+	  SIGNAL(matchFetchError(MatchRequester *)),
+	  this,
+	  SLOT(_matchFetchError(MatchRequester *)));
   qDebug() << "Requesting matches\n";
   mRequester->getAllMatches();
+}
+
+void Crawler::_matchFetchError(MatchRequester *requester) {
+    qCritical() << "Could not fetch match data!\n";
+    requester->deleteLater();
 }
 
 void Crawler::start() {

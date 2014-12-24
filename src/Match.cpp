@@ -1,5 +1,4 @@
 #include "Match.hpp"
-#include <QCoreApplication>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -31,7 +30,6 @@ QList<Match *> Match::fromJson(const QByteArray &json,
   if (err.error != QJsonParseError::NoError) {
     qCritical() << "Could not parse the json array. Reason:"
 		<< err.errorString() << "\n";
-    QCoreApplication::exit();
     return list;
   }
 
@@ -121,9 +119,9 @@ void MatchRequester::_heroesReady(HeroRequester *heroRequester,
 
 void MatchRequester::_heroesFetchError(HeroRequester *heroRequester,
 				       QString reason) {
-  QCoreApplication::exit();
   qCritical() << "Could not fetch hero names. reason:" << reason << "\n";
   heroRequester->deleteLater();
+  emit matchFetchError(this);
 }
 
 void MatchRequester::_fetchMatches(const QString &matchId) {
@@ -168,9 +166,9 @@ void MatchRequester::_matchDetailsReady(MatchDetailsRequester *detailsRequester,
 
 void MatchRequester::_matchDetailsFetchError(MatchDetailsRequester *detailsRequester,
 			     QString reason) {
-  QCoreApplication::exit();
   qCritical() << "Could not fetch details. reason:" << reason << "\n";
   detailsRequester->deleteLater();
+  emit matchFetchError(this);
 }
 
 void MatchRequester::replyReady(const QByteArray &json) {
