@@ -21,6 +21,7 @@ static void _myMessageOutput(QtMsgType type,
   //Prey for the gods, this can't fail!
   output.open(QIODevice::Text | QIODevice::Append);
   QTextStream stream(&output);
+  bool mustAbort = false;
   switch (type) {
   case QtDebugMsg:
     stream << date << "-" << localMsg.constData() << "\n";
@@ -33,7 +34,7 @@ static void _myMessageOutput(QtMsgType type,
     break;
   case QtFatalMsg:
     stream << "Fatal:" << date << "-" << localMsg.constData() << "\n";
-    abort();
+    mustAbort = true;
     break;
   default:
     stream << "Default:" << date << "-" << localMsg.constData() << "\n";
@@ -41,6 +42,8 @@ static void _myMessageOutput(QtMsgType type,
   }
   stream.flush();
   output.close();
+  if (mustAbort)
+    abort();
 }
 
 int main(int argc, char **argv) {

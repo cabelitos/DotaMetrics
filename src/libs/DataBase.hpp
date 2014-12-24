@@ -14,7 +14,7 @@ private:
   QSqlDatabase _db;
 
   void _openDB();
-  void _createDB(const QString &basePath);
+  void _createDB();
 
   bool _insertMatch(const Match &match);
   bool _insertMatchDetails(const MatchDetails &details);

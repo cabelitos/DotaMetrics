@@ -7,20 +7,20 @@
 #include <QDateTime>
 #include <QStringList>
 #include <QSqlQuery>
+#include <QStandardPaths>
+#include <QResource>
 
 DataBase::DataBase() {
+  Q_INIT_RESOURCE(resources);
 }
 
 DataBase::~DataBase() {
   _db.close();
 }
 
-void DataBase::_createDB(const QString &basePath) {
-  QString sqlFile(basePath);
-  sqlFile.append(QDir::separator()).append("database.sql");
-
-  qDebug() << "Openning:" << sqlFile << "\n";
-  QFile f(sqlFile);
+void DataBase::_createDB() {
+  QResource sqlFile(":/sql/database.sql");
+  QFile f(sqlFile.absoluteFilePath());
 
   if (!f.open(QIODevice::ReadOnly | QIODevice::Text))
     qFatal("Could not open the sql file");
@@ -46,12 +46,15 @@ void DataBase::_openDB() {
   if (!_db.isValid())
     qFatal("Could not create a Sqlite database!\n");
 
-  QString basePath(QDir::currentPath());
-  basePath.append(QDir::separator()).append("res");
+  QString dbPath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+  if (dbPath.isEmpty())
+    qFatal("Could not fetch AppDataLocation");
 
-  QString dbPath(basePath);
-  dbPath.append(QDir::separator()).append("dota_metrics.db");
-
+  QDir dir;
+  if (!dir.mkpath(dbPath))
+    qFatal("Could not create path %s\n", dbPath.toStdString().c_str());
+  
+  dbPath = dbPath + QDir::separator() + "dota_metrics.db";
   QFile file(dbPath);
   qDebug() << "Database path:" << dbPath << "\n";
 
@@ -63,7 +66,7 @@ void DataBase::_openDB() {
 
   if (mustCreate) {
     qDebug() << "Database does not exists. Creating\n";
-    _createDB(basePath);
+    _createDB();
   }
   QSqlQuery query;
   query.prepare("PRAGMA foreign_keys = ON");
