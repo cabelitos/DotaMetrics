@@ -6,6 +6,8 @@
 #include <QDir>
 #include <QString>
 #include <QTextStream>
+#include <QCommandLineParser>
+#include <iostream>
 #include "Crawler.hpp"
 
 static void _myMessageOutput(QtMsgType type,
@@ -42,7 +44,21 @@ static void _myMessageOutput(QtMsgType type,
 int main(int argc, char **argv) {
   qInstallMessageHandler(_myMessageOutput);
   QCoreApplication app(argc, argv);
-  ApiRequester::getInstance("a");
+  QCommandLineParser parser;
+  QCoreApplication::setApplicationName("Dota Metrics Crawler");
+  QCoreApplication::setApplicationVersion("1.0");
+  parser.setApplicationDescription("Fetches data from the dota restful api");
+  parser.addHelpOption();
+  parser.addVersionOption();
+  parser.addPositionalArgument("key", "Your Steam API key");
+  parser.process(app);
+  const QStringList args = parser.positionalArguments();
+  if (args.isEmpty()) {
+    std::cout << "You need to provide an API key\n";
+    parser.showHelp();
+    return -1;
+  }
+  ApiRequester::getInstance(args.at(0));
   Crawler c;
   c.start();
   app.exec();
