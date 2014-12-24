@@ -148,7 +148,10 @@ bool DataBase::_insertPlayersAndHeroInfo(const QList<Player*> &players,
 }
 
 void DataBase::insertValues(const QList<Match*> &matches) {
-  if (!_db.isOpen())
+  if (QSqlDatabase::contains()) {
+    _db = QSqlDatabase::database();
+    qDebug() << "Reusing database ";
+  } else
     _openDB();
 
   foreach (const Match *match, matches) {
