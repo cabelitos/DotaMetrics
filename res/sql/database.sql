@@ -22,6 +22,7 @@ CREATE TABLE MatchPlayerHeroes(_id integer primary key autoincrement,
        hero_id integer not null,
        player_id integer not null,
        player_slot integer not null,
+       UNIQUE (match_id, hero_id, player_id) on conflict ignore,
        FOREIGN KEY (match_id) REFERENCES Match(match_id),
        FOREIGN KEY (hero_id) REFERENCES Heroes(hero_id),
        FOREIGN KEY (player_id) REFERENCES Player(player_id));
