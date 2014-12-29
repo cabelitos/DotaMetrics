@@ -22,6 +22,7 @@ public:
   virtual ~ApiRequester();
   static ApiRequester *getInstance(const QString &key = QString());
   void makeRequest(QUrl url, ApiRequester::IReplyReadyListener *listener);
+  void removeListener(ApiRequester::IReplyReadyListener *listener);
 
   const QString _key;
 

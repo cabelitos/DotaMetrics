@@ -24,6 +24,7 @@ HeroRequester::HeroRequester(QObject *parent) : QObject(parent) {
 }
 
 HeroRequester::~HeroRequester() {
+  ApiRequester::getInstance()->removeListener(this);
 }
 
 void HeroRequester::getHeroes() {

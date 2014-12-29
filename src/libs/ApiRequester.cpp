@@ -35,6 +35,15 @@ void ApiRequester::_finishedSlot(QNetworkReply *reply) {
   reply->deleteLater();
 }
 
+void ApiRequester::removeListener(ApiRequester::IReplyReadyListener *listener) {
+  const ApiRequester::IReplyReadyListener *v;
+  foreach (QNetworkReply *reply, _requests.keys()) {
+    v = _requests.value(reply, nullptr);
+    if (listener == v)
+      _requests.remove(reply);
+  }
+}
+
 void ApiRequester::makeRequest(QUrl url,
 			       ApiRequester::IReplyReadyListener *listener) {
   QNetworkReply *reply = _networkManager.get(QNetworkRequest(url));

@@ -108,6 +108,7 @@ MatchRequester::MatchRequester(QObject *parent) :
 
 MatchRequester::~MatchRequester() {
   qDeleteAll(_matches);
+  ApiRequester::getInstance()->removeListener(this);
 }
 
 void MatchRequester::_heroesReady(HeroRequester *heroRequester,

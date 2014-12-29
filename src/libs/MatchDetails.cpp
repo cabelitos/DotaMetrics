@@ -40,6 +40,7 @@ MatchDetailsRequester::MatchDetailsRequester(QObject *parent) :
 }
 
 MatchDetailsRequester::~MatchDetailsRequester() {
+  ApiRequester::getInstance()->removeListener(this);
 }
 
 void MatchDetailsRequester::fetchMatchDetails(const QString &matchId) {
