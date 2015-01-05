@@ -177,7 +177,7 @@ void MatchRequester::replyReady(const QByteArray &json) {
 
   //The first match will be present again when using "start_at_match_id"
   if (!_matches.isEmpty())
-    list.removeAt(0);
+    delete list.takeFirst();
 
   if (!list.isEmpty()) {
     _matches.append(list);
