@@ -1,10 +1,5 @@
 cmake_minimum_required(VERSION 2.8.11)
 project(dota_metrics_crawler)
-set(CMAKE_AUTOMOC ON)
-
-find_package(Qt5Core REQUIRED)
-find_package(Qt5Network REQUIRED)
-find_package(Qt5Sql REQUIRED)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../libs/)
 
