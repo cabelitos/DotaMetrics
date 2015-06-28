@@ -1,21 +1,32 @@
 #include "DataBase.hpp"
 #include <QtGlobal>
 #include <QtDebug>
-#include <QDir>
 #include <QFile>
 #include <QTextStream>
 #include <QDateTime>
 #include <QStringList>
 #include <QSqlQuery>
-#include <QStandardPaths>
+#include <QSqlRecord>
 #include <QResource>
+#include <QStringBuilder>
 
-DataBase::DataBase() {
+DataBase::DataBase(const QString &connName, const QString &dbPath) :
+  _connName(connName),
+  _dbPath(dbPath) {
   Q_INIT_RESOURCE(resources);
+}
+
+void DataBase::setConnNameAndPath(const QString &connName,
+				  const QString &dbPath) {
+  _dbPath = dbPath;
+  _connName = connName;
 }
 
 DataBase::~DataBase() {
   _db.close();
+  //Avoid silly warning.
+  _db = QSqlDatabase();
+  QSqlDatabase::removeDatabase(_connName);
 }
 
 void DataBase::_createDB() {
@@ -31,7 +42,7 @@ void DataBase::_createDB() {
   foreach (const QString &command, commands) {
     if (command.trimmed().isEmpty())
       continue;
-    QSqlQuery query;
+    QSqlQuery query(_db);
     query.prepare(command);
     if (!query.exec())
       qFatal("Could not execute the command: %s \n",
@@ -41,24 +52,30 @@ void DataBase::_createDB() {
   f.close();
 }
 
-void DataBase::_openDB() {
-  _db = QSqlDatabase::addDatabase("QSQLITE");
+bool DataBase::open() {
+  if (_connName.isEmpty()) {
+    qCritical() << "Connection name is empty";
+    return false;
+  }
+
+  if (_dbPath.isEmpty()) {
+    qCritical() << "DB path is empty";
+    return false;
+  }
+
+  if (QSqlDatabase::contains(_connName)) {
+    _db = QSqlDatabase::database(_connName);
+    return true;
+  }
+
+  _db = QSqlDatabase::addDatabase("QSQLITE", _connName);
   if (!_db.isValid())
     qFatal("Could not create a Sqlite database!\n");
 
-  QString dbPath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
-  if (dbPath.isEmpty())
-    qFatal("Could not fetch AppDataLocation");
+  QFile file(_dbPath);
+  qDebug() << "Database path:" << _dbPath << "\n";
 
-  QDir dir;
-  if (!dir.mkpath(dbPath))
-    qFatal("Could not create path %s\n", dbPath.toStdString().c_str());
-  
-  dbPath = dbPath + QDir::separator() + "dota_metrics.db";
-  QFile file(dbPath);
-  qDebug() << "Database path:" << dbPath << "\n";
-
-  _db.setDatabaseName(dbPath);
+  _db.setDatabaseName(_dbPath);
   bool mustCreate = !file.exists();
 
   if (!_db.open())
@@ -68,14 +85,16 @@ void DataBase::_openDB() {
     qDebug() << "Database does not exists. Creating\n";
     _createDB();
   }
-  QSqlQuery query;
+
+  QSqlQuery query(_db);
   query.prepare("PRAGMA foreign_keys = ON");
   if (!query.exec())
     qCritical() << "Could not turn foriegn keys on";
+  return true;
 }
 
 bool DataBase::_insertMatchDetails(const MatchDetails &details) {
-  QSqlQuery query;
+  QSqlQuery query(_db);
   if (!details._isValid) {
     qCritical() << "Match details is not valid! details" << details << "\n";
     return false;
@@ -91,7 +110,7 @@ bool DataBase::_insertMatchDetails(const MatchDetails &details) {
 }
 
 bool DataBase::_insertMatch(const Match &match) {
-  QSqlQuery query;
+  QSqlQuery query(_db);
   query.prepare("insert into Match (match_id, time_stamp, game_type)"\
 		" values(?, ?, ?)");
   query.addBindValue(match.getId());
@@ -105,7 +124,7 @@ bool DataBase::_insertMatch(const Match &match) {
 }
 
 bool DataBase::_insertHero(const Hero &hero) {
-  QSqlQuery query;
+  QSqlQuery query(_db);
   query.prepare("insert into Heroes (hero_id, name) values(?, ?)");
   query.addBindValue(hero.getId());
   query.addBindValue(hero.getName());
@@ -115,7 +134,7 @@ bool DataBase::_insertHero(const Hero &hero) {
 bool DataBase::_insertMatchPlayerHeroes(const Player &player,
 					const Hero &hero,
 					const QString &match_id) {
-  QSqlQuery query;
+  QSqlQuery query(_db);
   query.prepare("insert into MatchPlayerHeroes "\
 		" (match_id, hero_id, player_id, player_slot) "\
 		" values(?, ?, ?, ?)");
@@ -129,7 +148,7 @@ bool DataBase::_insertMatchPlayerHeroes(const Player &player,
 bool DataBase::_insertPlayersAndHeroInfo(const QList<Player*> &players,
 					 const QString &match_id) {
   foreach (const Player *player, players) {
-    QSqlQuery query;
+    QSqlQuery query(_db);
     query.prepare("insert into Player (player_id) values(?)");
     query.addBindValue(player->getPlayerId());
     if (!query.exec()) {
@@ -151,12 +170,6 @@ bool DataBase::_insertPlayersAndHeroInfo(const QList<Player*> &players,
 }
 
 void DataBase::insertValues(const QList<Match*> &matches) {
-  if (QSqlDatabase::contains()) {
-    _db = QSqlDatabase::database();
-    qDebug() << "Reusing database ";
-  } else
-    _openDB();
-
   foreach (const Match *match, matches) {
     if (!_db.transaction())
       qFatal("Could not start a transaction!\n");
@@ -174,4 +187,79 @@ void DataBase::insertValues(const QList<Match*> &matches) {
 
     _db.commit();
   }
+}
+
+QHash<int, QList<QString> *> DataBase::_getHeroes(const QString &table, bool *err) {
+  QHash<int, QList<QString> *> result;
+  bool r = false;
+  QList<QString> *names;
+  int currentMatch, newMatch;
+
+  QSqlQuery query(_db);
+  query.prepare("select _id, name from " + table);
+
+  if (!query.exec()) {
+    r = true;
+    qCritical() << "Could not fetch the heroes!";
+  } else {
+    int match = query.record().indexOf("_id");
+    int hero_name = query.record().indexOf("name");
+    currentMatch = -1;
+    while (query.next()) {
+      newMatch = query.value(match).toInt();
+      if (currentMatch != newMatch) {
+	names = new QList<QString>();
+	result.insert(newMatch, names);
+	currentMatch = newMatch;
+      }
+      names->push_back(query.value(hero_name).toString());
+    }
+  }
+
+  if (err)
+    *err = r;
+  return result;
+}
+
+QHash<int, QList<QString> *> DataBase::getWinningHeroes(bool *err) {
+  return _getHeroes("WinningHeroes", err);
+}
+
+QHash<int, QList<QString> *> DataBase::getLosingHeroes(bool *err) {
+  return _getHeroes("LosingHeroes", err);
+}
+
+QList<int> DataBase::getValidMatchesIds(bool *err) {
+  QList<int> res;
+  bool r = true;
+  QSqlQuery query(_db);
+
+  query.prepare("select _id from WinningHeroes group by _id");
+  if (!query.exec()) {
+    qCritical() << "Could not execute the count query";
+    goto exit;
+  }
+  while (query.next())
+    res.push_back(query.value(0).toInt());
+  r = false;
+ exit:
+  if (err)
+    *err = r;
+  return res;
+}
+
+bool DataBase::deleteMatchesById(const QList<int> &matches) {
+  QString str = "";
+  QSqlQuery query(_db);
+  foreach (int i, matches)
+    str = str % "," % QString::number(i);
+  str = str.remove(0, 1);
+  //Oh boy...
+  query.prepare("delete from Match where _id in (" + str +")");
+  if (!query.exec()) {
+    qCritical() << "Could not delete the matches!";
+    return false;
+  }
+  _db.commit();
+  return true;
 }

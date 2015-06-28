@@ -22,3 +22,4 @@ endif()
 
 add_subdirectory(libs)
 add_subdirectory(crawler)
+add_subdirectory(analytics)
