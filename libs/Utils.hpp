@@ -19,5 +19,6 @@ public:
 
   static QString getAppDir();
   static QString getDatabasePath();
-  static bool createTestAndTrainDatabase(QString &trainFile, QString &testFile);
+  static bool createTestAndTrainDatabase(QString &trainFile, QString &testFile,
+					 bool replace);
 };

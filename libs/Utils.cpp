@@ -53,7 +53,8 @@ bool Utils::_deleteMatches(const QString &path,
   return true;
 }
 
-bool Utils::createTestAndTrainDatabase(QString &trainFile, QString &testFile) {
+bool Utils::createTestAndTrainDatabase(QString &trainFile, QString &testFile,
+				       bool replace) {
   QString dbPath = Utils::getDatabasePath();
   QFile dbFile(dbPath);
   bool r = false, err;
@@ -64,8 +65,16 @@ bool Utils::createTestAndTrainDatabase(QString &trainFile, QString &testFile) {
     qCritical() << "Dota database does not exists at:" << dbPath;
     return r;
   }
+
   testFile = Utils::getAppDir() + QDir::separator() + "dota_test.db";
   trainFile = Utils::getAppDir() + QDir::separator() + "dota_train.db";
+
+  if (replace) {
+    qDebug() << "Replace the data bases";
+    QFile::remove(trainFile);
+    QFile::remove(testFile);
+  }
+
   bool trainExists = QFile::exists(trainFile);
   bool testExists = QFile::exists(testFile);
 
