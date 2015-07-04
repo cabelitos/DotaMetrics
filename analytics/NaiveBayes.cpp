@@ -54,17 +54,19 @@ bool NaiveBayes::addObservation(const QStringList &tokens, const QString &klass)
 float NaiveBayes::_probability(const QString &token, const QString &klass,
 			       int classTotalOccurences,
 			       int numberOfTokens,
-			       float class_prob) {
+			       float classProb) {
   NaiveBayesFeature *feature;
 
   if (!_tokens.contains(token)) {
-    return (numberOfTokens * class_prob) /
-    (classTotalOccurences +  numberOfTokens);
+    return NaiveBayes::NaiveBayesFeature::getProbability(0,
+							 classTotalOccurences,
+							 numberOfTokens,
+							 classProb);
   }
 
   feature = _tokens.value(token);
   return feature->probability(klass, classTotalOccurences, numberOfTokens,
-			      class_prob);
+			      classProb);
 }
 
 static bool _results_sort(const QPair<QString, float> &p1,
@@ -124,8 +126,23 @@ void NaiveBayes::NaiveBayesFeature::addObservation(const QString &klass) {
 float NaiveBayes::NaiveBayesFeature::probability(const QString &klass,
 						 int classTotalOccurences,
 						 int numberOfTokens,
-						 float class_prob) {
+						 float classProb) {
   int *count = _occurrences.value(klass);
-  return (float)(*count + (numberOfTokens * class_prob)) /
+  int n;
+  if (!count)
+    n = 0;
+  else
+    n = *count;
+  return NaiveBayes::NaiveBayesFeature::getProbability(n,
+						       classTotalOccurences,
+						       numberOfTokens,
+						       classProb);
+}
+
+float NaiveBayes::NaiveBayesFeature::getProbability(int count,
+						    int classTotalOccurences,
+						    int numberOfTokens,
+						    float classProb) {
+  return (float)(count + (numberOfTokens * classProb)) /
     (classTotalOccurences +  numberOfTokens);
 }

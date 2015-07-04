@@ -20,7 +20,12 @@ private:
     virtual ~NaiveBayesFeature();
     void addObservation(const QString &klass);
     float probability(const QString &klass, int classTotalOccurences,
-		      int numberOfTokens, float class_prob);
+		      int numberOfTokens, float classProb);
+
+    static float getProbability(int count,
+				int classTotalOccurences,
+				int numberOfTokens,
+				float classProb);
   };
 
   QHash<QString, int *> _classes;
@@ -29,7 +34,7 @@ private:
 
   float _probability(const QString &token, const QString &klass,
 		     int classTotalOccurences, int numberOfTokens,
-		     float class_prob);
+		     float classProb);
 
 public:
   NaiveBayes();
